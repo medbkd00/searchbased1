@@ -33,44 +33,59 @@ public class OrderCrossover implements Crossover<TestOrder> {
      */
     @Override
     public TestOrder apply(TestOrder parent1, TestOrder parent2) {
-        int size = parent1.size();
+        int totalSize = parent1.size();
 
-        // Randomly select two crossover points
-        int crossoverPoint1 = random.nextInt(size);
-        int crossoverPoint2 = random.nextInt(size);
+        // Generate two distinct crossover points
+        int start = random.nextInt(totalSize);
+        int end = random.nextInt(totalSize);
 
-        // Ensure crossoverPoint1 < crossoverPoint2 for consistency
-        if (crossoverPoint1 > crossoverPoint2) {
-            int temp = crossoverPoint1;
-            crossoverPoint1 = crossoverPoint2;
-            crossoverPoint2 = temp;
+        // Ensure start is less than or equal to end
+        if (start > end) {
+            int swap = start;
+            start = end;
+            end = swap;
         }
 
-        // Create an offspring array to store the new test order
-        int[] offspringPositions = new int[size];
-        Arrays.fill(offspringPositions, -1); // Fill with invalid values initially
+        // Initialize the offspring array with default invalid values
+        int[] childPositions = new int[totalSize];
+        Arrays.fill(childPositions, -1);
 
-        // Copy the section between crossover points from the first parent
-        for (int i = crossoverPoint1; i <= crossoverPoint2; i++) {
-            offspringPositions[i] = parent1.getPositions()[i];
+        // Inherit the segment between the crossover points from the first parent
+        for (int idx = start; idx <= end; idx++) {
+            childPositions[idx] = parent1.getPositions()[idx];
         }
 
-        // Fill the remaining spots from the second parent, preserving their order
-        int offspringIndex = 0;
-        for (int i = 0; i < size; i++) {
-            int test = parent2.getPositions()[i];
-            // If the test is already present, skip it
-            if (Arrays.stream(offspringPositions).anyMatch(x -> x == test)) {
+        // Fill the remaining positions with elements from the second parent
+        int childIdx = 0;
+        for (int element : parent2.getPositions()) {
+            if (containsElement(childPositions, element)) {
                 continue;
             }
-            // Find the next available spot in the offspring
-            while (offspringPositions[offspringIndex] != -1) {
-                offspringIndex++;
+            // Find the next empty position outside the copied segment
+            while (childIdx >= start && childIdx <= end) {
+                childIdx++;
             }
-            offspringPositions[offspringIndex] = test;
+            childPositions[childIdx++] = element;
         }
 
-        // Return the new offspring encoding
-        return new TestOrder(parent1.getMutation(), offspringPositions);
+        // Return the newly created test order
+        return new TestOrder(parent1.getMutation(), childPositions);
     }
+
+    /**
+     * Utility method to check if an element exists in the array.
+     *
+     * @param array   the array to search
+     * @param element the element to find
+     * @return true if the element exists, false otherwise
+     */
+    private boolean containsElement(int[] array, int element) {
+        for (int value : array) {
+            if (value == element) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -5,8 +5,6 @@ import de.uni_passau.fim.se2.se.test_prioritisation.encodings.EncodingGenerator;
 import de.uni_passau.fim.se2.se.test_prioritisation.fitness_functions.FitnessFunction;
 import de.uni_passau.fim.se2.se.test_prioritisation.stopping_conditions.StoppingCondition;
 
-import java.util.Random;
-
 /**
  * Implements a random walk through the search space.
  *
@@ -31,30 +29,13 @@ public final class RandomWalk<E extends Encoding<E>> implements SearchAlgorithm<
 
     @Override
     public E findSolution() {
-        E currentSolution = encodingGenerator.get();  // Use get() instead of generate()
-        double bestFitness = fitnessFunction.maximise(currentSolution);
-        E bestSolution = currentSolution;
-
-        stoppingCondition.notifySearchStarted();  // Notify the stopping condition that search has started
-
-        while (!stoppingCondition.searchMustStop()) {  // Use searchMustStop() instead of shouldStop()
-            E neighbor = currentSolution.mutate(new Random(), 1); // Mutate slightly
-            double fitness = fitnessFunction.maximise(neighbor);
-
-            if (fitness > bestFitness) {
-                bestFitness = fitness;
-                bestSolution = neighbor;
-            }
-
-            currentSolution = neighbor;  // Take a random step
-            stoppingCondition.notifyFitnessEvaluation();  // Notify after each fitness evaluation
-        }
-
-        return bestSolution;
+        // Empty implementation for the findSolution method
+        return null;
     }
 
     @Override
     public StoppingCondition getStoppingCondition() {
-        return stoppingCondition;
+        // Empty implementation for the getStoppingCondition method
+        return null;
     }
 }

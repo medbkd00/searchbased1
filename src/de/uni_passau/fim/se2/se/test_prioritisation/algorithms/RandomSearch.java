@@ -30,29 +30,13 @@ public final class RandomSearch<E extends Encoding<E>> implements SearchAlgorith
 
     @Override
     public E findSolution() {
-        E bestSolution = null;
-        double bestFitness = Double.NEGATIVE_INFINITY;
-
-        stoppingCondition.notifySearchStarted();  // Notify the stopping condition that search has started
-
-        while (!stoppingCondition.searchMustStop()) {
-            E candidate = encodingGenerator.get();  // Use get() method from EncodingGenerator
-            double fitness = fitnessFunction.maximise(candidate);
-
-            if (fitness > bestFitness) {
-                bestFitness = fitness;
-                bestSolution = candidate;
-            }
-
-            stoppingCondition.notifyFitnessEvaluation();  // Notify after each fitness evaluation
-        }
-
-        return bestSolution;
+        // Empty implementation for the findSolution method
+        return null;
     }
 
     @Override
     public StoppingCondition getStoppingCondition() {
-        return stoppingCondition;
+        // Empty implementation for the getStoppingCondition method
+        return null;
     }
 }
-

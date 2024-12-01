@@ -6,42 +6,46 @@ import de.uni_passau.fim.se2.se.test_prioritisation.fitness_functions.APLC;
 import java.util.*;
 
 public class TournamentSelection implements ParentSelection<TestOrder> {
-    private final int tournamentSize;
-    private final APLC fitnessFunction;
-    private final Random random;
-    private final static int DEFAULT_TOURNAMENT_SIZE = 5;
 
-    public TournamentSelection(int tournamentSize, APLC fitnessFunction, Random random) {
-        if (fitnessFunction == null || random == null) {
-            throw new NullPointerException("Fitness function and random must not be null.");
+    private final int selectionSize;
+    private final APLC fitnessEvaluator;
+    private final Random randomizer;
+
+    public TournamentSelection(int size, APLC fitnessFunction, Random random) {
+        if (size <= 0 || fitnessFunction == null || random == null) {
+            throw new IllegalArgumentException("Invalid arguments for tournament selection.");
         }
-        if (tournamentSize <= 0) {
-            throw new IllegalArgumentException("Tournament size must be greater than 0.");
-        }
-        this.tournamentSize = tournamentSize;
-        this.fitnessFunction = fitnessFunction;
-        this.random = random;
+        this.selectionSize = size;
+        this.fitnessEvaluator = fitnessFunction;
+        this.randomizer = random;
     }
 
     public TournamentSelection(APLC fitnessFunction, Random random) {
-        this(DEFAULT_TOURNAMENT_SIZE, fitnessFunction, random);
+        this(5, fitnessFunction, random);
     }
 
     @Override
     public TestOrder selectParent(List<TestOrder> population) {
         if (population == null || population.isEmpty()) {
-            throw new IllegalArgumentException("Population must not be null or empty.");
+            throw new IllegalArgumentException("Population cannot be null or empty.");
         }
 
-        // Create a tournament from the population
-        List<TestOrder> tournament = new ArrayList<>();
-        for (int i = 0; i < tournamentSize; i++) {
-            TestOrder randomIndividual = population.get(random.nextInt(population.size()));
-            tournament.add(randomIndividual);
-        }
+        List<TestOrder> candidates = pickRandomSubset(population);
 
-        // Select the best individual based on fitness
-        return Collections.max(tournament, Comparator.comparingDouble(fitnessFunction::applyAsDouble));
+        return findBestCandidate(candidates);
     }
 
+    private List<TestOrder> pickRandomSubset(List<TestOrder> population) {
+        List<TestOrder> subset = new ArrayList<>();
+        for (int i = 0; i < selectionSize; i++) {
+            subset.add(population.get(randomizer.nextInt(population.size())));
+        }
+        return subset;
+    }
+
+    private TestOrder findBestCandidate(List<TestOrder> candidates) {
+        return candidates.stream()
+                .max(Comparator.comparingDouble(fitnessEvaluator::applyAsDouble))
+                .orElseThrow(() -> new IllegalStateException("No candidates available."));
+    }
 }

@@ -2,97 +2,69 @@ package de.uni_passau.fim.se2.se.test_prioritisation.fitness_functions;
 
 import de.uni_passau.fim.se2.se.test_prioritisation.encodings.TestOrder;
 
-/**
- * The Average Percentage of Lines Covered (APLC) fitness function.
- */
 public final class APLC implements FitnessFunction<TestOrder> {
 
-    /**
-     * The coverage matrix to be used when computing the APLC metric.
-     */
-    private final boolean[][] coverageMatrix;
+    private final boolean[][] lineCoverageMatrix;
 
-    /**
-     * Creates a new APLC fitness function with the given coverage matrix.
-     *
-     * @param coverageMatrix the coverage matrix to be used when computing the APLC metric
-     */
-    public APLC(final boolean[][] coverageMatrix) {
-        if (coverageMatrix == null) {
-            throw new IllegalArgumentException("Coverage matrix cannot be null");
+    public APLC(boolean[][] coverageMatrix) {
+        if (coverageMatrix == null || coverageMatrix.length == 0 || coverageMatrix[0].length == 0) {
+            throw new IllegalArgumentException("Invalid coverage matrix provided.");
         }
-        if (coverageMatrix.length == 0 || coverageMatrix[0].length == 0) {
-            throw new IllegalArgumentException("Coverage matrix cannot be empty");
-        }
-        this.coverageMatrix = coverageMatrix;
+        this.lineCoverageMatrix = coverageMatrix;
     }
 
-    /**
-     * Computes and returns the APLC for the given order of test cases.
-     * Orderings that achieve a higher rate of coverage are rewarded with higher values.
-     * The APLC ranges between 0.0 and 1.0.
-     *
-     * @param testOrder the proposed test order for which the fitness value will be computed
-     * @return the APLC value of the given test order
-     * @throws NullPointerException if {@code null} is given
-     */
     @Override
-    public double applyAsDouble(final TestOrder testOrder) throws NullPointerException {
+    public double applyAsDouble(TestOrder testOrder) {
         if (testOrder == null) {
-            throw new NullPointerException("Test order cannot be null");
+            throw new NullPointerException("Test order cannot be null.");
         }
 
-        int n = coverageMatrix.length;  // Number of test cases
-        int m = coverageMatrix[0].length;  // Number of lines
-        int[] positions = testOrder.getPositions();  // Test execution order
+        int totalTests = lineCoverageMatrix.length;
+        int totalLines = lineCoverageMatrix[0].length;
 
-        // Array to store the first test that covers each line
-        int[] firstCoveringTest = new int[m];
+        int[] firstCoverageIndices = computeFirstCoverageIndices(testOrder.getPositions(), totalLines);
 
-        // Initialize all entries to an invalid value (e.g., -1)
-        for (int i = 0; i < m; i++) {
-            firstCoveringTest[i] = -1;
+        int penaltySum = calculatePenaltySum(firstCoverageIndices, totalTests);
+
+        return calculateAPLCValue(totalTests, totalLines, penaltySum);
+    }
+
+    private int[] computeFirstCoverageIndices(int[] testOrder, int totalLines) {
+        int[] indices = new int[totalLines];
+        for (int i = 0; i < totalLines; i++) {
+            indices[i] = -1;
         }
 
-        // Find the first test covering each line
-        for (int testIndex = 0; testIndex < positions.length; testIndex++) {
-            int test = positions[testIndex];
-            for (int line = 0; line < m; line++) {
-                if (coverageMatrix[test][line] && firstCoveringTest[line] == -1) {
-                    // Record the 1-based index of the first test that covers this line
-                    firstCoveringTest[line] = testIndex + 1;
+        for (int testIndex = 0; testIndex < testOrder.length; testIndex++) {
+            int test = testOrder[testIndex];
+            for (int line = 0; line < totalLines; line++) {
+                if (lineCoverageMatrix[test][line] && indices[line] == -1) {
+                    indices[line] = testIndex + 1;
                 }
             }
         }
-
-        // Compute the sum of the first test indices covering each line
-        int sumFirstCoverage = 0;
-        for (int line = 0; line < m; line++) {
-            if (firstCoveringTest[line] != -1) {
-                sumFirstCoverage += firstCoveringTest[line];
-            } else {
-                // If no test covers a line, penalize it by adding (n + 1)
-                sumFirstCoverage += (n + 1);
-            }
-        }
-
-        // Apply the APLC formula
-        return 1.0 - ((double) sumFirstCoverage / (n * m)) + (1.0 / (2 * n));
+        return indices;
     }
 
-    /**
-     * Returns the fitness for maximisation.
-     */
+    private int calculatePenaltySum(int[] firstCoverageIndices, int totalTests) {
+        int sum = 0;
+        for (int index : firstCoverageIndices) {
+            sum += (index == -1) ? (totalTests + 1) : index;
+        }
+        return sum;
+    }
+
+    private double calculateAPLCValue(int totalTests, int totalLines, int penaltySum) {
+        return 1.0 - ((double) penaltySum / (totalTests * totalLines)) + (0.5 / totalTests);
+    }
+
     @Override
-    public double maximise(TestOrder encoding) throws NullPointerException {
+    public double maximise(TestOrder encoding) {
         return applyAsDouble(encoding);
     }
 
-    /**
-     * Returns the fitness for minimisation.
-     */
     @Override
-    public double minimise(TestOrder encoding) throws NullPointerException {
+    public double minimise(TestOrder encoding) {
         return -applyAsDouble(encoding);
     }
 }
